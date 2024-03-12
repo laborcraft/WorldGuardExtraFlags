@@ -3,6 +3,7 @@ package net.goldtreeservers.worldguardextraflags.wg.handlers;
 import com.sk89q.worldedit.bukkit.BukkitPlayer;
 import com.sk89q.worldedit.util.Location;
 import com.sk89q.worldedit.world.World;
+import com.sk89q.worldedit.world.gamemode.GameModes;
 import com.sk89q.worldguard.LocalPlayer;
 import com.sk89q.worldguard.session.handler.FlagValueChangeHandler;
 import com.sk89q.worldguard.session.handler.Handler;
@@ -66,7 +67,16 @@ public class FlyFlagHandler extends FlagValueChangeHandler<State>
 
 		if (!this.getSession().getManager().hasBypass(player, world) && state != null)
 		{
-			boolean value = state == State.ALLOW;
+
+			boolean value;
+			if(player.getGameMode().equals(GameModes.SPECTATOR))
+			{
+				value = true;
+			}
+			else
+			{
+				value = state == State.ALLOW;
+			}
 			
 			if (bukkitPlayer.getAllowFlight() != value)
 			{

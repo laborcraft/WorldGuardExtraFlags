@@ -6,20 +6,14 @@ import com.sk89q.worldguard.LocalPlayer;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 import com.sk89q.worldguard.protection.regions.RegionContainer;
 import com.sk89q.worldguard.session.SessionManager;
+import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.PlayerDeathEvent;
-import org.bukkit.event.player.AsyncPlayerChatEvent;
-import org.bukkit.event.player.PlayerChangedWorldEvent;
-import org.bukkit.event.player.PlayerGameModeChangeEvent;
-import org.bukkit.event.player.PlayerItemConsumeEvent;
-import org.bukkit.event.player.PlayerItemDamageEvent;
-import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.event.player.PlayerRespawnEvent;
-import org.bukkit.event.player.PlayerTeleportEvent;
+import org.bukkit.event.player.*;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.PotionMeta;
 import org.bukkit.potion.Potion;
@@ -143,7 +137,7 @@ public class PlayerListener implements Listener
 	public void onPlayerGameModeChangeEvent(PlayerGameModeChangeEvent event)
 	{
 		Player player = event.getPlayer();
-		
+
 		Session wgSession = this.sessionManager.getIfPresent(this.worldGuardPlugin.wrapPlayer(player));
 		if (wgSession != null)
 		{
@@ -176,7 +170,7 @@ public class PlayerListener implements Listener
 	private void checkFlyStatus(Player player)
 	{
 		Boolean value = this.sessionManager.get(this.worldGuardPlugin.wrapPlayer(player)).getHandler(FlyFlagHandler.class).getCurrentValue();
-		if (value != null)
+		if (value != null && !player.getGameMode().equals(GameMode.SPECTATOR))
 		{
 			player.setAllowFlight(value);
 		}
@@ -211,9 +205,9 @@ public class PlayerListener implements Listener
 	public void onPlayerJoinEvent(PlayerJoinEvent event)
 	{
 		Player player = event.getPlayer();
-		
+
 		Boolean value = this.sessionManager.get(this.worldGuardPlugin.wrapPlayer(player)).getHandler(FlyFlagHandler.class).getCurrentValue();
-		if (value != null)
+		if (value != null && !player.getGameMode().equals(GameMode.SPECTATOR))
 		{
 			player.setAllowFlight(value);
 		}
@@ -227,9 +221,24 @@ public class PlayerListener implements Listener
 		//Some plugins toggle flight off on world change based on permissions,
 		//so we need to make sure to force the flight status.
 		Boolean value = this.sessionManager.get(this.worldGuardPlugin.wrapPlayer(player)).getHandler(FlyFlagHandler.class).getCurrentValue();
-		if (value != null)
+		if (value != null && !player.getGameMode().equals(GameMode.SPECTATOR))
 		{
 			player.setAllowFlight(value);
+		}
+	}
+
+	@EventHandler(priority = EventPriority.HIGHEST)
+	public void onPlayerFlyChange(PlayerToggleFlightEvent event)
+	{
+		Player player = event.getPlayer();
+
+		//Something, like a /fly plugin, might be trying to allow the player to fly,
+		//so we need to stop that action if the flag is on deny.
+		Boolean value = this.sessionManager.get(this.worldGuardPlugin.wrapPlayer(player)).getHandler(FlyFlagHandler.class).getCurrentValue();
+		if (value != null && !value && event.isFlying() && !player.getGameMode().equals(GameMode.SPECTATOR))
+		{
+			event.setCancelled(true);
+			player.setAllowFlight(false);
 		}
 	}
 }
