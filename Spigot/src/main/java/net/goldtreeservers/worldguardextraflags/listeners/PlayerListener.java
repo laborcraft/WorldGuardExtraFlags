@@ -16,7 +16,8 @@ import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.*;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.PotionMeta;
-import org.bukkit.potion.Potion;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.spigotmc.event.player.PlayerSpawnLocationEvent;
 
@@ -30,6 +31,9 @@ import net.goldtreeservers.worldguardextraflags.flags.Flags;
 import net.goldtreeservers.worldguardextraflags.wg.WorldGuardUtils;
 import net.goldtreeservers.worldguardextraflags.wg.handlers.FlyFlagHandler;
 import net.goldtreeservers.worldguardextraflags.wg.handlers.GiveEffectsFlagHandler;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @RequiredArgsConstructor
 public class PlayerListener implements Listener
@@ -119,9 +123,17 @@ public class PlayerListener implements Listener
 		Player player = event.getPlayer();
 		
 		ItemMeta itemMeta = event.getItem().getItemMeta();
-		if (itemMeta instanceof PotionMeta)
+		if (itemMeta instanceof PotionMeta potionMeta)
 		{
-			this.sessionManager.get(this.worldGuardPlugin.wrapPlayer(player)).getHandler(GiveEffectsFlagHandler.class).drinkPotion(player, Potion.fromItemStack(event.getItem()).getEffects());
+			List<PotionEffect> effects = new ArrayList<>();
+			if (potionMeta.getBasePotionType() != null)
+			{
+				effects.addAll(potionMeta.getBasePotionType().getPotionEffects());
+			}
+
+			effects.addAll(potionMeta.getCustomEffects());
+
+			this.sessionManager.get(this.worldGuardPlugin.wrapPlayer(player)).getHandler(GiveEffectsFlagHandler.class).drinkPotion(player, effects);
 		}
 		else
 		{
